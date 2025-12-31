@@ -1,66 +1,77 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+
+import { useState } from "react";
 
 export default function Home() {
+  const [content, setContent] = useState("");
+  const [ttl, setTtl] = useState<number | "">("");
+  const [maxViews, setMaxViews] = useState<number | "">("");
+  const [pasteUrl, setPasteUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    try {
+      const res = await fetch("/api/pastes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content,
+          ttl_seconds: ttl ? Number(ttl) : undefined,
+          max_views: maxViews ? Number(maxViews) : undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Something went wrong");
+      } else {
+        setPasteUrl(data.url);
+      }
+    } catch (err) {
+      setError("Network error");
+    }
+  };
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div style={{ maxWidth: 600, margin: "2rem auto", fontFamily: "sans-serif" }}>
+      <h1>Create a Paste</h1>
+      <form onSubmit={handleSubmit}>
+        <textarea
+          rows={8}
+          placeholder="Paste content..."
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          style={{ width: "100%", marginBottom: "1rem" }}
+          required
         />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+        <div style={{ marginBottom: "1rem" }}>
+          <input
+            type="number"
+            placeholder="TTL in seconds (optional)"
+            value={ttl}
+            onChange={(e) => setTtl(e.target.value ? Number(e.target.value) : "")}
+            style={{ width: "48%", marginRight: "4%" }}
+          />
+          <input
+            type="number"
+            placeholder="Max views (optional)"
+            value={maxViews}
+            onChange={(e) => setMaxViews(e.target.value ? Number(e.target.value) : "")}
+            style={{ width: "48%" }}
+          />
         </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+        <button type="submit" style={{ padding: "0.5rem 1rem" }}>Create Paste</button>
+      </form>
+
+      {error && <p style={{ color: "red" }}>{error}</p>}
+      {pasteUrl && (
+        <p>
+          Your paste URL: <a href={pasteUrl}>{pasteUrl}</a>
+        </p>
+      )}
     </div>
   );
 }

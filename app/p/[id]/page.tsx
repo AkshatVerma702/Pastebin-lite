@@ -1,15 +1,11 @@
 import { headers } from "next/headers";
 
-
 async function getPaste(id: string) {
   const h = await headers();
   const host = h.get("host");
   const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
 
-  const res = await fetch(
-    `${protocol}://${host}/api/pastes/${id}`,
-    { cache: "no-store" }
-  );
+  const res = await fetch(`${protocol}://${host}/api/pastes/${id}`, { cache: "no-store" });
 
   if (!res.ok) return null;
   return res.json();
@@ -18,9 +14,9 @@ async function getPaste(id: string) {
 export default async function PastePage({
   params,
 }: {
-  params: Promise<{ id: string }>
+  params: Promise<{ id: string }>;
 }) {
-    const {id} = await params
+  const { id } = await params;
   const data = await getPaste(id);
 
   if (!data) {
@@ -28,7 +24,7 @@ export default async function PastePage({
   }
 
   return (
-    <pre style={{ whiteSpace: "pre-wrap" }}>
+    <pre style={{ whiteSpace: "pre-wrap", wordWrap: "break-word" }}>
       {data.content}
     </pre>
   );

@@ -1,72 +1,39 @@
-
 import { NextRequest, NextResponse } from "next/server";
-import { getPaste, deletePaste } from "@/app/lib/pasteStore";
+import getRedis from "@/app/lib/redis";
 
-function getNow(req: Request) {
-  if (process.env.TEST_MODE === "1") {
-    const header = req.headers.get("x-test-now-ms");
-    if (header) return Number(header);
-  }
-  return Date.now();
-}
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }>}) {
+    const redis = await getRedis();
+    const {id} = await params
+    const key = `paste:${id}`;
 
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const {id} = await params
-  const paste = getPaste(id);
+    const raw = await redis.get(key);
+    if (!raw) return NextResponse.json({ error: "Paste not found" }, { status: 404 });
 
-  if (!paste) {
-    return NextResponse.json(
-      { error: "Paste not found" },
-      { status: 404 }
-    );
-  }
+    const paste = JSON.parse(raw);
 
-  const now = getNow(req);
+    // Check if x-test-now-ms is provided, else use real time
+    const testNowHeader = req.headers.get("x-test-now-ms");
+    const now = testNowHeader ? parseInt(testNowHeader, 10) : Date.now();
 
-  // TTL check
-  if (
-    paste.ttlSeconds !== null &&
-    now > paste.createdAt + paste.ttlSeconds * 1000
-  ) {
-    deletePaste(paste.id);
-    return NextResponse.json(
-      { error: "Paste not found" },
-      { status: 404 }
-    );
-  }
+    // Check TTL
+    if (paste.expires_at && now > paste.expires_at) {
+        await redis.del(key);
+        return NextResponse.json({ error: "Paste expired" }, { status: 404 });
+    }
 
-  // View limit check
-  if (
-    paste.maxViews !== null &&
-    paste.views >= paste.maxViews
-  ) {
-    deletePaste(paste.id);
-    return NextResponse.json(
-      { error: "Paste not found" },
-      { status: 404 }
-    );
-  }
+    // Check view limit
+    if (paste.remaining_views !== null) {
+        if (paste.remaining_views <= 0) {
+            await redis.del(key);
+            return NextResponse.json({ error: "Paste view limit exceeded" }, { status: 404 });
+        }
+        paste.remaining_views -= 1;
+        await redis.set(key, JSON.stringify(paste));
+    }
 
-  // Increment views
-  paste.views += 1;
-
-  return NextResponse.json(
-    {
-      content: paste.content,
-      remaining_views:
-        paste.maxViews === null
-          ? null
-          : Math.max(paste.maxViews - paste.views, 0),
-      expires_at:
-        paste.ttlSeconds === null
-          ? null
-          : new Date(
-              paste.createdAt + paste.ttlSeconds * 1000
-            ).toISOString(),
-    },
-    { status: 200 }
-  );
+    return NextResponse.json({
+        content: paste.content,
+        remaining_views: paste.remaining_views,
+        expires_at: paste.expires_at
+    });
 }
