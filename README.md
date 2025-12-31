@@ -1,36 +1,36 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Pastebin-Lite
 
-## Getting Started
+A simple Pastebin-like application built with **Next.js** and **Redis**. Users can create text pastes, share a URL, and view pastes with optional constraints (TTL and view limits). Features include creating pastes with optional time-to-live (TTL) and maximum views, viewing pastes via a shareable URL, and a health check route for monitoring. The project is serverless deployment ready on **Vercel**.
 
-First, run the development server:
+## Routes
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+**Health Check:** `GET /api/healthz` returns JSON `{ "ok": true }` if the service and Redis are accessible.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**Create a Paste:** `POST /api/pastes` with JSON body `{ "content": "Your text here", "ttl_seconds": 60, "max_views": 5 }` (ttl_seconds and max_views are optional). Response example: `{ "id": "abcd1234", "url": "https://your-app.vercel.app/p/abcd1234" }`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**Fetch a Paste (API):** `GET /api/pastes/:id` returns JSON with paste content, remaining views, and expiry info. Returns 404 if paste is expired, missing, or view limit exceeded.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**View a Paste (HTML):** `GET /p/:id` renders the paste content in HTML. Returns 404 if paste is unavailable.
 
-## Learn More
+## Getting Started (Local Development)
 
-To learn more about Next.js, take a look at the following resources:
+1. Clone the repository: `git clone <your-repo-url>` and `cd pastebin`.
+2. Install dependencies: `npm install`.
+3. Create a `.env.local` file with `NEXT_PUBLIC_BASE_URL=http://localhost:3000` and `REDIS_URL=redis://default:<password>@<host>:<port>`.
+4. Run the development server: `npm run dev`.
+5. Open [http://localhost:3000](http://localhost:3000) to view the app.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Persistence Layer
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+This project uses **Redis** to store pastes. Each paste is saved as a JSON object in Redis with optional TTL and view count constraints. Redis keys follow the pattern `paste:<id>`. TTL is handled via Redis `EXPIRE`, and view counts are decremented on each fetch.
 
-## Deploy on Vercel
+## Design Decisions
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Serverless-compatible: Next.js API routes handle all logic and are safe for Vercel deployment.
+- Centralized constraints logic: TTL and max_views are handled in API routes for consistent behavior across API and HTML views.
+- Redis over in-memory storage: Allows pastes to persist across serverless invocations.
+- Dynamic URLs: Protocol and host are determined from request headers for proper URL generation in both development and production.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Deployment
+
+Deployed on Vercel: [https://pastebin-lite-flax.vercel.app](https://pastebin-lite-flax.vercel.app). Make sure to set environment variables in Vercel project settings: `NEXT_PUBLIC_BASE_URL` and `REDIS_URL`.
