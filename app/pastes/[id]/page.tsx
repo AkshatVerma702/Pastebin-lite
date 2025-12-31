@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 
+
 async function getPaste(id: string) {
   const h = await headers();
   const host = h.get("host");

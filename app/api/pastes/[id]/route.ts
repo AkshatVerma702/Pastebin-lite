@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+
+import { NextRequest, NextResponse } from "next/server";
 import { getPaste, deletePaste } from "@/app/lib/pasteStore";
 
 function getNow(req: Request) {
@@ -11,9 +12,10 @@ function getNow(req: Request) {
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const paste = getPaste(params.id);
+  const {id} = await params
+  const paste = getPaste(id);
 
   if (!paste) {
     return NextResponse.json(
