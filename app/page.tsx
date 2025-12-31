@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import styles from "./page.module.css";
 
 export default function Home() {
   const [content, setContent] = useState("");
@@ -36,7 +37,7 @@ export default function Home() {
   };
 
   return (
-    <div style={{ maxWidth: 600, margin: "2rem auto", fontFamily: "sans-serif" }}>
+    <div className={styles.container}>
       <h1>Create a Paste</h1>
       <form onSubmit={handleSubmit}>
         <textarea
@@ -44,31 +45,30 @@ export default function Home() {
           placeholder="Paste content..."
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          style={{ width: "100%", marginBottom: "1rem" }}
           required
         />
-        <div style={{ marginBottom: "1rem" }}>
+        <div style={{ display: "flex", marginBottom: "1rem" }}>
           <input
             type="number"
             placeholder="TTL in seconds (optional)"
             value={ttl}
             onChange={(e) => setTtl(e.target.value ? Number(e.target.value) : "")}
-            style={{ width: "48%", marginRight: "4%" }}
+            style={{ flex: 1 }}
           />
           <input
             type="number"
             placeholder="Max views (optional)"
             value={maxViews}
             onChange={(e) => setMaxViews(e.target.value ? Number(e.target.value) : "")}
-            style={{ width: "48%" }}
+            style={{ flex: 1, marginLeft: "4%" }}
           />
         </div>
-        <button type="submit" style={{ padding: "0.5rem 1rem" }}>Create Paste</button>
+        <button type="submit">Create Paste</button>
       </form>
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {error && <p className={styles.error}>{error}</p>}
       {pasteUrl && (
-        <p>
+        <p className={styles.url}>
           Your paste URL: <a href={pasteUrl}>{pasteUrl}</a>
         </p>
       )}
