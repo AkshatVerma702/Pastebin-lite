@@ -6,7 +6,7 @@ async function getPaste(id: string) {
   const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
 
   const res = await fetch(
-    `${protocol}://${host}/api/paste/${id}`,
+    `${protocol}://${host}/api/pastes/${id}`,
     { cache: "no-store" }
   );
 
