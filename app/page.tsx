@@ -47,7 +47,7 @@ export default function Home() {
 
   return (
     <main className={styles.container}>
-      <h1 className={styles.title}>Create a Paste</h1>
+      <h1 className={styles.heading}>Create a Paste</h1>
 
       <form onSubmit={handleSubmit}>
         <textarea
